@@ -10,6 +10,11 @@ This tool does not completely 'melt' its input, but does resolve several issues 
   - Each annotation for each variant is reported on a separate line.
   - In cases where there are multiple alternate alleles for a variant, each alternate allele is reported on a separate line.
 
+## Dependencies
+The `vcf_melt.py` script depends on [PyVCF](https://github.com/jamescasbon/PyVCF). Dependencies are listed in the [`requirements.txt`](https://github.com/BCCDC-PHL/vcf-melt/blob/main/requirements.txt) file.
+
+Note that PyVCF is not compatible with Python > 3.5. A future version of this script may switch to either manually parsing the vcf contents using only python standard library features, or switching to using [cyvcf2](https://github.com/brentp/cyvcf2) to parse the input.
+
 ## Usage
 ```
 usage: vcf_melt.py [-h] vcf

@@ -122,11 +122,6 @@ def main(args):
     has_info_lof = 'LOF' in infos
     has_info_nmd = 'NMD' in infos
 
-    """
-    Allele               | Annotation         | Annotation_Impact | Gene_Name                | Gene_ID | Feature_Type           | 
-    Feature_ID           | Transcript_BioType | Rank              | HGVS.c                   | HGVS.p  | cDNA.pos / cDNA.length | 
-    CDS.pos / CDS.length | AA.pos / AA.length | Distance          | ERRORS / WARNINGS / INFO |
-    """
     snpeff_ann_fields = [
         'snpeff_ann_allele',
         'snpeff_ann_annotation',
@@ -144,6 +139,47 @@ def main(args):
         'snpeff_ann_aa_pos_length',
         'snpeff_ann_distance',
         'snpeff_ann_errors_warnings_info',
+    ]
+
+    maybe_multiple_alts_info_fields = [
+        'alt_alleles',
+        'estimated_allele_freq',
+        'num_alt_haplotype',
+        'num_alt_haplotypes_with_partial',
+        'sum_quality_of_alt_observations',
+        'sum_quality_of_partial_alt_observations',
+        'num_alt_observations_fwd_strand',
+        'num_alt_observations_rev_strand',
+        'strand_balance_probability_alt_allele',
+        'allele_balance_het_sites',
+        'allele_balance_probability_het_sites',
+        'run_length',
+        'read_placement_probability',
+        'reads_placed_left',
+        'reads_placed_right',
+        'end_placement_probability',
+        'alt_allele_depth_ratio',
+        'variant_type',
+        'cigar_alt',
+        'mean_num_alt_alleles',
+        'mean_mapping_quality_alt',
+        'proportion_properly_paired_alt',
+        'allele_length',
+        'mean_mapping_quality',
+        'proportion_properly_paired',
+        'variant_allele_fraction',
+        'genotype_likelihood',
+        'allele_depth',
+    ]
+
+    maybe_multiple_alts_format_fields = [
+        'allele_depth',
+        'alt_allele_observation_count',
+        'sum_quality_of_alt_observations',
+    ]
+
+    ref_plus_multiple_alts_format_fields = [
+        'genotype_likelihood',
     ]
 
     snpeff_ann_slash_fields = {
@@ -189,46 +225,70 @@ def main(args):
             header += snpeff_ann_slash_fields[slash_field]
         header += snpeff_ann_fields[14:]
 
-    header += [formats_lookup[f] for f in formats]
+    #header += [formats_lookup[f] for f in formats]
+    for f in formats:
+        if formats_lookup[f] in ref_plus_multiple_alts_format_fields:
+            header.append('ref_' + formats_lookup[f])
+            header.append('alt_' + formats_lookup[f])
+        else:
+            header.append(formats_lookup[f])
 
     out.writerow(header)
 
     for record in reader:
-        info_row = [flatten(record.INFO.get(i, None)) for i in infos]
+        
         annotations = []
         if has_info_ann:
             annotations = [parse_snpeff_annotation(x, snpeff_ann_fields, snpeff_ann_slash_fields) for x in record.INFO.get('ANN', None)]
-        
-        [alt] = record.ALT
-        if not record.ID:
-            record_id = '.'
-        fixed = [record.CHROM, record.POS, record_id, record.REF, alt, record.QUAL]
 
-        for sample in record.samples:
-            if has_info_ann:
-                for ann in annotations:
+        for alt_idx, alt in enumerate(record.ALT):
+
+            if not record.ID:
+                record_id = '.'
+            fixed = [record.CHROM, record.POS, record_id, record.REF, alt, record.QUAL]
+            info = []
+            for i in infos:
+                if infos_lookup[i] in maybe_multiple_alts_info_fields:
+                    info.append(record.INFO.get(i, None)[alt_idx])
+                else:
+                    info.append(flatten(record.INFO.get(i, None)))
+
+            for sample in record.samples:
+                formats_row = []
+                for f in formats:
+                    if formats_lookup[f] in maybe_multiple_alts_format_fields:
+                        if type(getattr(sample.data, f, None)) == type([]):
+                            formats_row.append(getattr(sample.data, f, None)[alt_idx])
+                        else:
+                            formats_row.append(getattr(sample.data, f, None))
+                    elif formats_lookup[f] in ref_plus_multiple_alts_format_fields:
+                        formats_row.append(getattr(sample.data, f, None)[0])
+                        formats_row.append(getattr(sample.data, f, None)[alt_idx + 1])
+                    else:
+                        formats_row.append(flatten(getattr(sample.data, f, None)))
+
+                if has_info_ann:
+                    for ann in annotations:
+                        row = [sample.sample]
+                        # Format fields not present will simply end up "blank"
+                        # in the output
+                        row += fixed
+                        row += [record.FILTER or '.']
+                        row += info
+                        row += ann.values()
+                        row += formats_row
+
+                        out.writerow(row)
+                else:
                     row = [sample.sample]
                     # Format fields not present will simply end up "blank"
                     # in the output
                     row += fixed
                     row += [record.FILTER or '.']
-                    row += info_row
-                    row += ann.values()
-                    formats_row = [flatten(getattr(sample.data, f, None)) for f in formats]
+                    row += info
                     row += formats_row
 
                     out.writerow(row)
-            else:
-                row = [sample.sample]
-                # Format fields not present will simply end up "blank"
-                # in the output
-                row += fixed
-                row += [record.FILTER or '.']
-                row += info_row
-                formats_row = [flatten(getattr(sample.data, f, None)) for f in formats]
-                row += formats_row
-
-                out.writerow(row)
 
 
 if __name__ == '__main__':

@@ -54,69 +54,8 @@ def main(args):
     reader = vcf.VCFReader(inp)
 
     formats = list(reader.formats.keys())
-    formats_lookup = {
-        'GT':     'genotype',
-        'GQ':     'genotype_quality',
-        'GL':     'genotype_likelihood',
-        'DP':     'read_depth',
-        'AD':     'allele_depth',
-        'RO':     'ref_allele_observation_count',
-        'QR':     'sum_quality_of_ref_observations',
-        'AO':     'alt_allele_observation_count',
-        'QA':     'sum_quality_of_alt_observations',
-        'MIN_DP': 'minimum_depth_gvcf',
-    }
 
     infos = list(reader.infos.keys())
-    infos_lookup = {
-        'NS':      'num_samples',
-        'DP':      'total_depth',
-        'DPB':     'total_depth_per_bp',
-        'AC':      'alt_alleles',
-        'AN':      'num_alleles',
-        'AF':      'estimated_allele_freq',
-        'RO':      'num_ref_haplotype',
-        'AO':      'num_alt_haplotype',
-        'PRO':     'num_ref_haplotypes_with_partial',
-        'PAO':     'num_alt_haplotypes_with_partial',
-        'QR':      'sum_quality_of_ref_observations',
-        'QA':      'sum_quality_of_alt_observations',
-        'PQR':     'sum_quality_of_partial_ref_observations',
-        'PQA':     'sum_quality_of_partial_alt_observations',
-        'SRF':     'num_ref_observations_fwd_strand',
-        'SRR':     'num_ref_observations_rev_strand',
-        'SAF':     'num_alt_observations_fwd_strand',
-        'SAR':     'num_alt_observations_rev_strand',
-        'SRP':     'strand_balance_probability_ref_allele',
-        'SAP':     'strand_balance_probability_alt_allele',
-        'AB':      'allele_balance_het_sites',
-        'ABP':     'allele_balance_probability_het_sites',
-        'RUN':     'run_length',
-        'RPP':     'read_placement_probability',
-        'RPPR':    'read_placement_probability_ref',
-        'RPL':     'reads_placed_left',
-        'RPR':     'reads_placed_right',
-        'EPP':     'end_placement_probability',
-        'EPPR':    'end_placement_probability_ref',
-        'DPRA':    'alt_allele_depth_ratio',
-        'ODDS':    'log_odds_ratio',
-        'GTI':     'genotyping_iterations',
-        'TYPE':    'variant_type',
-        'CIGAR':   'cigar_alt',
-        'NUMALT':  'num_alt_alleles',
-        'MEANALT': 'mean_num_alt_alleles',
-        'LEN':     'allele_length',
-        'MQM':     'mean_mapping_quality_alt',
-        'MQMR':    'mean_mapping_quality_ref',
-        'PAIRED':  'proportion_properly_paired_alt',
-        'PAIREDR': 'proportion_properly_paired_ref',
-        'MIN_DP':  'min_depth_gvcf',
-        'END':     'end_gvcf',
-        'VAF':     'variant_allele_fraction',
-        'ANN':     'functional_annotation',
-        'LOF':     'loss_of_function',
-        'NMD':     'nonsense_mediated_decay',
-    }
 
     has_info_ann = 'ANN' in infos
     has_info_lof = 'LOF' in infos
@@ -142,40 +81,36 @@ def main(args):
     ]
 
     maybe_multiple_alts_info_fields = [
-        'alt_alleles',
-        'estimated_allele_freq',
-        'num_alt_haplotype',
-        'num_alt_haplotypes_with_partial',
-        'sum_quality_of_alt_observations',
-        'sum_quality_of_partial_alt_observations',
-        'num_alt_observations_fwd_strand',
-        'num_alt_observations_rev_strand',
-        'strand_balance_probability_alt_allele',
-        'allele_balance_het_sites',
-        'allele_balance_probability_het_sites',
-        'run_length',
-        'read_placement_probability',
-        'reads_placed_left',
-        'reads_placed_right',
-        'end_placement_probability',
-        'alt_allele_depth_ratio',
-        'variant_type',
-        'cigar_alt',
-        'mean_num_alt_alleles',
-        'mean_mapping_quality_alt',
-        'proportion_properly_paired_alt',
-        'allele_length',
-        'mean_mapping_quality',
-        'proportion_properly_paired',
-        'variant_allele_fraction',
-        'genotype_likelihood',
-        'allele_depth',
+        'AC',
+        'AF',
+        'AO',
+        'PAO',
+        'QA',
+        'PQA',
+        'SAF',
+        'SAR',
+        'SAP',
+        'AB',
+        'ABP',
+        'RUN',
+        'RPP',
+        'RPL',
+        'RPR',
+        'EPP',
+        'DPRA',
+        'TYPE',
+        'CIGAR',
+        'MEANALT',
+        'MQM',
+        'PAIRED',
+        'LEN',
+        'VAF',
     ]
 
     maybe_multiple_alts_format_fields = [
-        'allele_depth',
-        'alt_allele_observation_count',
-        'sum_quality_of_alt_observations',
+        'AD',
+        'AO',
+        'QA',
     ]
 
     ref_plus_multiple_alts_format_fields = [
@@ -247,7 +182,7 @@ def main(args):
             fixed = [record.CHROM, record.POS, record_id, record.REF, alt, record.QUAL]
             info = []
             for i in infos:
-                if infos_lookup[i] in maybe_multiple_alts_info_fields:
+                if i in maybe_multiple_alts_info_fields:
                     info.append(record.INFO.get(i, None)[alt_idx])
                 else:
                     info.append(flatten(record.INFO.get(i, None)))
@@ -255,7 +190,7 @@ def main(args):
             for sample in record.samples:
                 formats_row = []
                 for f in formats:
-                    if formats_lookup[f] in maybe_multiple_alts_format_fields:
+                    if f in maybe_multiple_alts_format_fields:
                         if type(getattr(sample.data, f, None)) == type([]):
                             formats_row.append(getattr(sample.data, f, None)[alt_idx])
                         else:

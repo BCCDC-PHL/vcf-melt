@@ -21,16 +21,16 @@ def flatten(x):
     return x
 
 
-def parse_snpeff_annotation(ann, snpeff_ann_fields, snpeff_ann_slash_fields):
+def parse_annotation(ann, ann_fields, ann_slash_fields):
     """
     """
     
     ann_split = ann.split('|')
 
     parsed_ann = collections.OrderedDict()
-    for idx, field in enumerate(snpeff_ann_fields):
-        if field in snpeff_ann_slash_fields.keys():
-            [f1, f2] = snpeff_ann_slash_fields[field]
+    for idx, field in enumerate(ann_fields):
+        if field in ann_slash_fields.keys():
+            [f1, f2] = ann_slash_fields[field]
             if ann_split[idx]:
                 value_split = ann_split[idx].split('/')
             else:
@@ -41,7 +41,7 @@ def parse_snpeff_annotation(ann, snpeff_ann_fields, snpeff_ann_slash_fields):
             parsed_ann[field] = ann_split[idx]
 
     return parsed_ann
-        
+
 
 
 def main(args):
@@ -122,23 +122,23 @@ def main(args):
     has_info_lof = 'LOF' in infos
     has_info_nmd = 'NMD' in infos
 
-    snpeff_ann_fields = [
-        'snpeff_ann_allele',
-        'snpeff_ann_annotation',
-        'snpeff_ann_annotation_impact',
-        'snpeff_ann_gene_name',
-        'snpeff_ann_gene_id',
-        'snpeff_ann_feature_type',
-        'snpeff_ann_feature_id',
-        'snpeff_ann_transcript_biotype',
-        'snpeff_ann_rank',
-        'snpeff_ann_hgvs_c',
-        'snpeff_ann_hgvs_p',
-        'snpeff_ann_cdna_pos_length',
-        'snpeff_ann_cds_pos_length',
-        'snpeff_ann_aa_pos_length',
-        'snpeff_ann_distance',
-        'snpeff_ann_errors_warnings_info',
+    ann_fields = [
+        'ANN_ALLELE',
+        'ANN_ANNOTATION',
+        'ANN_IMPACT',
+        'ANN_GENE_NAME',
+        'ANN_GENE_ID',
+        'ANN_FEATURE_TYPE',
+        'ANN_FEATURE_ID',
+        'ANN_TRANSCRIPT_BIOTYPE',
+        'ANN_RANK',
+        'ANN_HGVS_C',
+        'ANN_HGVS_P',
+        'ANN_CDNA_POSITION_LENGTH',
+        'ANN_CDS_POSITION_LENGTH',
+        'ANN_AA_POSITION_LENGTH',
+        'ANN_DISTANCE',
+        'ANN_ERRORS_WARNINGS_INFO',
     ]
 
     maybe_multiple_alts_info_fields = [
@@ -179,13 +179,13 @@ def main(args):
     ]
 
     ref_plus_multiple_alts_format_fields = [
-        'genotype_likelihood',
+        'GL',
     ]
 
-    snpeff_ann_slash_fields = {
-        'snpeff_ann_cdna_pos_length': ['snpeff_ann_cdna_position', 'snpeff_ann_cdna_length'],
-        'snpeff_ann_cds_pos_length': ['snpeff_ann_cds_position', 'snpeff_ann_cds_length'],
-        'snpeff_ann_aa_pos_length': ['snpeff_ann_aa_position', 'snpeff_ann_aa_length'],
+    ann_slash_fields = {
+        'ANN_CDNA_POSITION_LENGTH': ['ANN_CDNA_POSITION', 'ANN_CDNA_LENGTH'],
+        'ANN_CDS_POSITION_LENGTH': ['ANN_CDS_POSITION', 'ANN_CDS_LENGTH'],
+        'ANN_AA_POSITION_LENGTH': ['ANN_AA_POSITION', 'ANN_AA_LENGTH'],
     }
 
     snpeff_lof_fields = [
@@ -217,21 +217,20 @@ def main(args):
     if has_info_nmd:
         infos = list(filter(lambda x: x != 'NMD', infos))
 
-    header = ["library_id"] + ['ref_accession', 'position', 'variant_id', 'ref_allele', 'alt_allele', 'quality', 'filter'] + [infos_lookup[i] for i in infos]
+    header = ["SAMPLE"] + ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER'] + ['INFO_' + i for i in infos]
 
     if has_info_ann:
-        header += snpeff_ann_fields[0:11]
-        for slash_field in snpeff_ann_slash_fields.keys():
-            header += snpeff_ann_slash_fields[slash_field]
-        header += snpeff_ann_fields[14:]
+        header += ann_fields[0:11]
+        for slash_field in ann_slash_fields.keys():
+            header += ann_slash_fields[slash_field]
+        header += ann_fields[14:]
 
-    #header += [formats_lookup[f] for f in formats]
     for f in formats:
-        if formats_lookup[f] in ref_plus_multiple_alts_format_fields:
-            header.append('ref_' + formats_lookup[f])
-            header.append('alt_' + formats_lookup[f])
+        if f in ref_plus_multiple_alts_format_fields:
+            header.append('FORMAT_REF_' + f)
+            header.append('FORMAT_ALT_' + f)
         else:
-            header.append(formats_lookup[f])
+            header.append('FORMAT_' + f)
 
     out.writerow(header)
 
@@ -239,7 +238,7 @@ def main(args):
         
         annotations = []
         if has_info_ann:
-            annotations = [parse_snpeff_annotation(x, snpeff_ann_fields, snpeff_ann_slash_fields) for x in record.INFO.get('ANN', None)]
+            annotations = [parse_annotation(x, ann_fields, ann_slash_fields) for x in record.INFO.get('ANN', None)]
 
         for alt_idx, alt in enumerate(record.ALT):
 
@@ -261,7 +260,7 @@ def main(args):
                             formats_row.append(getattr(sample.data, f, None)[alt_idx])
                         else:
                             formats_row.append(getattr(sample.data, f, None))
-                    elif formats_lookup[f] in ref_plus_multiple_alts_format_fields:
+                    elif f in ref_plus_multiple_alts_format_fields:
                         formats_row.append(getattr(sample.data, f, None)[0])
                         formats_row.append(getattr(sample.data, f, None)[alt_idx + 1])
                     else:

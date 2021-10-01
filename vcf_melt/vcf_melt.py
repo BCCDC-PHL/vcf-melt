@@ -44,7 +44,10 @@ def parse_annotation(ann, ann_fields, ann_slash_fields):
 
 
 
-def main(args):
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('vcf')
+    args = parser.parse_args()
 
     out = csv.writer(sys.stdout, delimiter=',', quotechar='"')
     if args.vcf:
@@ -226,7 +229,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('vcf')
-    args = parser.parse_args()
-    main(args)
+    main()

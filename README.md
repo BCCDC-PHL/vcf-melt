@@ -11,13 +11,13 @@ This tool does not completely 'melt' its input, but does resolve several issues 
   - In cases where there are multiple alternate alleles for a variant, each alternate allele is reported on a separate line.
 
 ## Dependencies
-The `vcf_melt.py` script depends on [PyVCF](https://github.com/jamescasbon/PyVCF). Dependencies are listed in the [`requirements.txt`](https://github.com/BCCDC-PHL/vcf-melt/blob/main/requirements.txt) file.
+The `vcf_melt.py` script depends on [PyVCF](https://github.com/jamescasbon/PyVCF). Dependencies are listed in the [`setup.py`](https://github.com/BCCDC-PHL/vcf-melt/blob/main/setup.py) file.
 
 Note that PyVCF is not compatible with Python > 3.5. A future version of this script may switch to either manually parsing the vcf contents using only python standard library features, or switching to using [cyvcf2](https://github.com/brentp/cyvcf2) to parse the input.
 
 ## Usage
 ```
-usage: vcf_melt.py [-h] vcf
+usage: vcf-melt [-h] vcf
 
 positional arguments:
   vcf
@@ -26,10 +26,10 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-The `vcf_melt.py` script takes a vcf file as input and prints the 'melted' csv-formatted output to stdandard output. Eg:
+The `vcf-melt` script takes a vcf file as input and prints the 'melted' csv-formatted output to stdandard output. Eg:
 
 ```
-vcf_melt.py a_vcf_file.vcf > melted_vcf.csv
+vcf-melt a_vcf_file.vcf > melted_vcf.csv
 ```
 ## Output
 

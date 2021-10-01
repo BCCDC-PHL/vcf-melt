@@ -21,16 +21,16 @@ def flatten(x):
     return x
 
 
-def parse_snpeff_annotation(ann, snpeff_ann_fields, snpeff_ann_slash_fields):
+def parse_annotation(ann, ann_fields, ann_slash_fields):
     """
     """
     
     ann_split = ann.split('|')
 
     parsed_ann = collections.OrderedDict()
-    for idx, field in enumerate(snpeff_ann_fields):
-        if field in snpeff_ann_slash_fields.keys():
-            [f1, f2] = snpeff_ann_slash_fields[field]
+    for idx, field in enumerate(ann_fields):
+        if field in ann_slash_fields.keys():
+            [f1, f2] = ann_slash_fields[field]
             if ann_split[idx]:
                 value_split = ann_split[idx].split('/')
             else:
@@ -41,7 +41,7 @@ def parse_snpeff_annotation(ann, snpeff_ann_fields, snpeff_ann_slash_fields):
             parsed_ann[field] = ann_split[idx]
 
     return parsed_ann
-        
+
 
 
 def main(args):
@@ -54,138 +54,73 @@ def main(args):
     reader = vcf.VCFReader(inp)
 
     formats = list(reader.formats.keys())
-    formats_lookup = {
-        'GT':     'genotype',
-        'GQ':     'genotype_quality',
-        'GL':     'genotype_likelihood',
-        'DP':     'read_depth',
-        'AD':     'allele_depth',
-        'RO':     'ref_allele_observation_count',
-        'QR':     'sum_quality_of_ref_observations',
-        'AO':     'alt_allele_observation_count',
-        'QA':     'sum_quality_of_alt_observations',
-        'MIN_DP': 'minimum_depth_gvcf',
-    }
 
     infos = list(reader.infos.keys())
-    infos_lookup = {
-        'NS':      'num_samples',
-        'DP':      'total_depth',
-        'DPB':     'total_depth_per_bp',
-        'AC':      'alt_alleles',
-        'AN':      'num_alleles',
-        'AF':      'estimated_allele_freq',
-        'RO':      'num_ref_haplotype',
-        'AO':      'num_alt_haplotype',
-        'PRO':     'num_ref_haplotypes_with_partial',
-        'PAO':     'num_alt_haplotypes_with_partial',
-        'QR':      'sum_quality_of_ref_observations',
-        'QA':      'sum_quality_of_alt_observations',
-        'PQR':     'sum_quality_of_partial_ref_observations',
-        'PQA':     'sum_quality_of_partial_alt_observations',
-        'SRF':     'num_ref_observations_fwd_strand',
-        'SRR':     'num_ref_observations_rev_strand',
-        'SAF':     'num_alt_observations_fwd_strand',
-        'SAR':     'num_alt_observations_rev_strand',
-        'SRP':     'strand_balance_probability_ref_allele',
-        'SAP':     'strand_balance_probability_alt_allele',
-        'AB':      'allele_balance_het_sites',
-        'ABP':     'allele_balance_probability_het_sites',
-        'RUN':     'run_length',
-        'RPP':     'read_placement_probability',
-        'RPPR':    'read_placement_probability_ref',
-        'RPL':     'reads_placed_left',
-        'RPR':     'reads_placed_right',
-        'EPP':     'end_placement_probability',
-        'EPPR':    'end_placement_probability_ref',
-        'DPRA':    'alt_allele_depth_ratio',
-        'ODDS':    'log_odds_ratio',
-        'GTI':     'genotyping_iterations',
-        'TYPE':    'variant_type',
-        'CIGAR':   'cigar_alt',
-        'NUMALT':  'num_alt_alleles',
-        'MEANALT': 'mean_num_alt_alleles',
-        'LEN':     'allele_length',
-        'MQM':     'mean_mapping_quality_alt',
-        'MQMR':    'mean_mapping_quality_ref',
-        'PAIRED':  'proportion_properly_paired_alt',
-        'PAIREDR': 'proportion_properly_paired_ref',
-        'MIN_DP':  'min_depth_gvcf',
-        'END':     'end_gvcf',
-        'VAF':     'variant_allele_fraction',
-        'ANN':     'functional_annotation',
-        'LOF':     'loss_of_function',
-        'NMD':     'nonsense_mediated_decay',
-    }
 
     has_info_ann = 'ANN' in infos
     has_info_lof = 'LOF' in infos
     has_info_nmd = 'NMD' in infos
 
-    snpeff_ann_fields = [
-        'snpeff_ann_allele',
-        'snpeff_ann_annotation',
-        'snpeff_ann_annotation_impact',
-        'snpeff_ann_gene_name',
-        'snpeff_ann_gene_id',
-        'snpeff_ann_feature_type',
-        'snpeff_ann_feature_id',
-        'snpeff_ann_transcript_biotype',
-        'snpeff_ann_rank',
-        'snpeff_ann_hgvs_c',
-        'snpeff_ann_hgvs_p',
-        'snpeff_ann_cdna_pos_length',
-        'snpeff_ann_cds_pos_length',
-        'snpeff_ann_aa_pos_length',
-        'snpeff_ann_distance',
-        'snpeff_ann_errors_warnings_info',
+    ann_fields = [
+        'ANN_ALLELE',
+        'ANN_ANNOTATION',
+        'ANN_IMPACT',
+        'ANN_GENE_NAME',
+        'ANN_GENE_ID',
+        'ANN_FEATURE_TYPE',
+        'ANN_FEATURE_ID',
+        'ANN_TRANSCRIPT_BIOTYPE',
+        'ANN_RANK',
+        'ANN_HGVS_C',
+        'ANN_HGVS_P',
+        'ANN_CDNA_POSITION_LENGTH',
+        'ANN_CDS_POSITION_LENGTH',
+        'ANN_AA_POSITION_LENGTH',
+        'ANN_DISTANCE',
+        'ANN_ERRORS_WARNINGS_INFO',
     ]
 
     maybe_multiple_alts_info_fields = [
-        'alt_alleles',
-        'estimated_allele_freq',
-        'num_alt_haplotype',
-        'num_alt_haplotypes_with_partial',
-        'sum_quality_of_alt_observations',
-        'sum_quality_of_partial_alt_observations',
-        'num_alt_observations_fwd_strand',
-        'num_alt_observations_rev_strand',
-        'strand_balance_probability_alt_allele',
-        'allele_balance_het_sites',
-        'allele_balance_probability_het_sites',
-        'run_length',
-        'read_placement_probability',
-        'reads_placed_left',
-        'reads_placed_right',
-        'end_placement_probability',
-        'alt_allele_depth_ratio',
-        'variant_type',
-        'cigar_alt',
-        'mean_num_alt_alleles',
-        'mean_mapping_quality_alt',
-        'proportion_properly_paired_alt',
-        'allele_length',
-        'mean_mapping_quality',
-        'proportion_properly_paired',
-        'variant_allele_fraction',
-        'genotype_likelihood',
-        'allele_depth',
+        'AC',
+        'AF',
+        'AO',
+        'PAO',
+        'QA',
+        'PQA',
+        'SAF',
+        'SAR',
+        'SAP',
+        'AB',
+        'ABP',
+        'RUN',
+        'RPP',
+        'RPL',
+        'RPR',
+        'EPP',
+        'DPRA',
+        'TYPE',
+        'CIGAR',
+        'MEANALT',
+        'MQM',
+        'PAIRED',
+        'LEN',
+        'VAF',
     ]
 
     maybe_multiple_alts_format_fields = [
-        'allele_depth',
-        'alt_allele_observation_count',
-        'sum_quality_of_alt_observations',
+        'AD',
+        'AO',
+        'QA',
     ]
 
     ref_plus_multiple_alts_format_fields = [
-        'genotype_likelihood',
+        'GL',
     ]
 
-    snpeff_ann_slash_fields = {
-        'snpeff_ann_cdna_pos_length': ['snpeff_ann_cdna_position', 'snpeff_ann_cdna_length'],
-        'snpeff_ann_cds_pos_length': ['snpeff_ann_cds_position', 'snpeff_ann_cds_length'],
-        'snpeff_ann_aa_pos_length': ['snpeff_ann_aa_position', 'snpeff_ann_aa_length'],
+    ann_slash_fields = {
+        'ANN_CDNA_POSITION_LENGTH': ['ANN_CDNA_POSITION', 'ANN_CDNA_LENGTH'],
+        'ANN_CDS_POSITION_LENGTH': ['ANN_CDS_POSITION', 'ANN_CDS_LENGTH'],
+        'ANN_AA_POSITION_LENGTH': ['ANN_AA_POSITION', 'ANN_AA_LENGTH'],
     }
 
     snpeff_lof_fields = [
@@ -217,21 +152,20 @@ def main(args):
     if has_info_nmd:
         infos = list(filter(lambda x: x != 'NMD', infos))
 
-    header = ["library_id"] + ['ref_accession', 'position', 'variant_id', 'ref_allele', 'alt_allele', 'quality', 'filter'] + [infos_lookup[i] for i in infos]
+    header = ["SAMPLE"] + ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER'] + ['INFO_' + i for i in infos]
 
     if has_info_ann:
-        header += snpeff_ann_fields[0:11]
-        for slash_field in snpeff_ann_slash_fields.keys():
-            header += snpeff_ann_slash_fields[slash_field]
-        header += snpeff_ann_fields[14:]
+        header += ann_fields[0:11]
+        for slash_field in ann_slash_fields.keys():
+            header += ann_slash_fields[slash_field]
+        header += ann_fields[14:]
 
-    #header += [formats_lookup[f] for f in formats]
     for f in formats:
-        if formats_lookup[f] in ref_plus_multiple_alts_format_fields:
-            header.append('ref_' + formats_lookup[f])
-            header.append('alt_' + formats_lookup[f])
+        if f in ref_plus_multiple_alts_format_fields:
+            header.append('FORMAT_REF_' + f)
+            header.append('FORMAT_ALT_' + f)
         else:
-            header.append(formats_lookup[f])
+            header.append('FORMAT_' + f)
 
     out.writerow(header)
 
@@ -239,7 +173,7 @@ def main(args):
         
         annotations = []
         if has_info_ann:
-            annotations = [parse_snpeff_annotation(x, snpeff_ann_fields, snpeff_ann_slash_fields) for x in record.INFO.get('ANN', None)]
+            annotations = [parse_annotation(x, ann_fields, ann_slash_fields) for x in record.INFO.get('ANN', None)]
 
         for alt_idx, alt in enumerate(record.ALT):
 
@@ -248,7 +182,7 @@ def main(args):
             fixed = [record.CHROM, record.POS, record_id, record.REF, alt, record.QUAL]
             info = []
             for i in infos:
-                if infos_lookup[i] in maybe_multiple_alts_info_fields:
+                if i in maybe_multiple_alts_info_fields:
                     info.append(record.INFO.get(i, None)[alt_idx])
                 else:
                     info.append(flatten(record.INFO.get(i, None)))
@@ -256,12 +190,12 @@ def main(args):
             for sample in record.samples:
                 formats_row = []
                 for f in formats:
-                    if formats_lookup[f] in maybe_multiple_alts_format_fields:
+                    if f in maybe_multiple_alts_format_fields:
                         if type(getattr(sample.data, f, None)) == type([]):
                             formats_row.append(getattr(sample.data, f, None)[alt_idx])
                         else:
                             formats_row.append(getattr(sample.data, f, None))
-                    elif formats_lookup[f] in ref_plus_multiple_alts_format_fields:
+                    elif f in ref_plus_multiple_alts_format_fields:
                         formats_row.append(getattr(sample.data, f, None)[0])
                         formats_row.append(getattr(sample.data, f, None)[alt_idx + 1])
                     else:
